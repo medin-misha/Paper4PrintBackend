@@ -1,0 +1,12 @@
+[project]
+name = "paper4printbackend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "django>=5.2.3",
+    "pika>=1.3.2",
+    "psycopg2-binary>=2.9.10",
+    "uwsgi>=2.0.30",
+]
