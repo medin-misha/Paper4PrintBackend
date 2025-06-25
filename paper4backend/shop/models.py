@@ -28,3 +28,4 @@ class Orders(models.Model):
 
     def __str__(self) -> str:
         return f"Order {self.uuid} - {self.user.username} - {self.status}"
+
