@@ -33,14 +33,6 @@ class Orders(models.Model):
         return f"Order {self.uuid} - {self.user.username} - {self.status}"
 
 
-class ProductImage(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    file = models.FileField(upload_to="product/images/", null=False)
-    # product = models.ForeignKey(
-    #     to=Products, on_delete=models.CASCADE, null=True, related_name="images"
-    # )
-
-
 class Products(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(null=False, blank=False)
@@ -54,3 +46,11 @@ class Products(models.Model):
     is_archive = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class ProductImage(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    file = models.FileField(upload_to="product/images/", null=False)
+    product = models.ForeignKey(
+        to=Products, on_delete=models.CASCADE, null=True, related_name="images"
+    )
