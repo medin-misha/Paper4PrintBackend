@@ -32,3 +32,10 @@ class Orders(models.Model):
     def __str__(self) -> str:
         return f"Order {self.uuid} - {self.user.username} - {self.status}"
 
+
+class ProductImage(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    file = models.FileField(upload_to="product/images/", null=False)
+    # product = models.ForeignKey(
+    #     to=Products, on_delete=models.CASCADE, null=True, related_name="images"
+    # )
