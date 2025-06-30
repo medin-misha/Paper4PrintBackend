@@ -39,3 +39,18 @@ class ProductImage(models.Model):
     # product = models.ForeignKey(
     #     to=Products, on_delete=models.CASCADE, null=True, related_name="images"
     # )
+
+
+class Products(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(null=False, blank=False)
+    description = models.TextField(null=True, blank=True)
+    price = models.DecimalField(
+        null=False, max_digits=15, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    sale = models.IntegerField(
+        default=0, validators=[MinValueValidator(0), MaxValueValidator(100)]
+    )
+    is_archive = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
