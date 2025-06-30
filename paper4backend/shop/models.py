@@ -54,3 +54,20 @@ class ProductImage(models.Model):
     product = models.ForeignKey(
         to=Products, on_delete=models.CASCADE, null=True, related_name="images"
     )
+
+
+class ProductToOrder(models.Model):
+    product = models.ForeignKey(
+        to=Products, on_delete=models.CASCADE, null=False, related_name="orders"
+    )
+    order = models.ForeignKey(
+        to=Orders, on_delete=models.CASCADE, null=False, related_name="products"
+    )
+    count = models.IntegerField(default=0, validators=[MinValueValidator(1)])
+
+    # Уникальность пары product-order
+    class Meta:
+        unique_together = ("product", "order")
+
+    def __str__(self) -> str:
+        return f"{self.product.name} * {self.count} in {self.order.user.username}"
