@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
     "storages",
     "shop.apps.ShopConfig",
     "paper4auth.apps.Paper4AuthConfig",
