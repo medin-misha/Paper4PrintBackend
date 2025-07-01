@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 import uuid
 
 
-class Profile(User):
+class Profile(models.Model):
     uuid = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     phone = models.CharField(null=True, blank=True)
     chat_id = models.CharField(null=False, blank=False)
