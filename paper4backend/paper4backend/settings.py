@@ -9,9 +9,11 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+
 import os
 from pathlib import Path
 import dotenv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,7 +29,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 RMQ_URL = os.getenv("RABBITMQ_URL")
 
 # Application definition
@@ -40,7 +42,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "storages",
-    "shop.apps.ShopConfig"
+    "shop.apps.ShopConfig",
+    "paper4auth.apps.Paper4AuthConfig"
 ]
 
 MIDDLEWARE = [
@@ -129,13 +132,23 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-
-AWS_STORAGE_BUCKET_NAME = os.environ["CLOUDFLARE_BUCKET_NAME"]
-AWS_S3_ENDPOINT_URL = os.environ["CLOUDFLARE_ENDPOINT_URL"]
-AWS_ACCESS_KEY_ID = os.environ["CLOUDFLARE_ACCESS_TOKEN_ID"]
-AWS_SECRET_ACCESS_KEY = os.environ["CLOUDFLARE_SECRET_TOKEN"]
-
-AWS_S3_SIGNATURE_VERSION = "s3v4"
-AWS_S3_ADDRESSING_STYLE = "virtual"
-AWS_QUERYSTRING_AUTH = False
+# STORAGES = {
+#     "default": {
+#         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+#         "OPTIONS": {
+#             "bucket_name": os.environ["AWS_BUCKET_NAME"],
+#             "region_name": "",
+#             "access_key": os.environ["AWS_ACCESS_KEY_ID"],
+#             "secret_key": os.environ["AWS_SECRET_ACCESS_KEY"],
+#             "file_overwrite": False,
+#             "default_acl": None,
+#             "querystring_auth": False,
+#             "location": "media",  # папка в bucket
+#             "signature_version": "s3v4",
+#             "addressing_style": "virtual",
+#         },
+#     },
+#     "staticfiles": {
+#         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+#     },
+# }
