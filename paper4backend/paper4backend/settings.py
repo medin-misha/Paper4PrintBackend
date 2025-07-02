@@ -127,7 +127,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
-
+MEDIA_URL = "media/"
+MEDIA_ROOT = "media/"
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -152,3 +153,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 #         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
 #     },
 # }
+REST_FRAMEWORK = {
+    "DEFAULT_FILTER_BACKEND": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.OrderingFilter"
+    ]
+}
