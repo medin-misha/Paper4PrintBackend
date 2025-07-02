@@ -82,3 +82,6 @@ class Tags(models.Model):
         if not self.slag:
             self.slag = slugify(self.name)
         super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.name}"
