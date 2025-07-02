@@ -3,4 +3,6 @@ from . import views
 
 app_name = "shop"
 
-urlpatterns = []
+urlpatterns = [
+    path("products/", views.ProductsReadOnlyViewSet.as_view({"get": "list"}), name="products_list"),
+]
