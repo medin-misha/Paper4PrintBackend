@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.utils.text import slugify
 import uuid
 
 
@@ -44,6 +45,7 @@ class Products(models.Model):
     is_archive = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    tags = models.ManyToManyField(to="Tags", related_name="products")
 
 
 class ProductImage(models.Model):
@@ -69,3 +71,14 @@ class ProductToOrder(models.Model):
 
     def __str__(self) -> str:
         return f"{self.product.name} * {self.count} in {self.order.user.username}"
+
+
+class Tags(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
+    name = models.CharField(max_length=100, unique=True)
+    slag = models.SlugField(unique=True, blank=True, max_length=100)
+
+    def save(self, *args, **kwargs):
+        if not self.slag:
+            self.slag = slugify(self.name)
+        super().save(*args, **kwargs)
