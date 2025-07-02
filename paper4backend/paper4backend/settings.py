@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "storages",
+    "django_filters",
     "shop.apps.ShopConfig",
     "paper4auth.apps.Paper4AuthConfig",
 ]
