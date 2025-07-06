@@ -4,5 +4,12 @@ from . import views
 app_name = "shop"
 
 urlpatterns = [
-    path("products/", views.ProductsReadOnlyViewSet.as_view({"get": "list"}), name="products_list"),
+    path(
+        "products/",
+        views.ProductsReadOnlyViewSet.as_view({"get": "list"}),
+        name="products_list",
+    ),
+    path(
+        "orders/", views.OrdersViewSet.as_view({"get": "retrieve"}), name="orders_list"
+    ),
 ]
