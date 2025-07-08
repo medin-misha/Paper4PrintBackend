@@ -10,6 +10,10 @@ urlpatterns = [
         name="products_list",
     ),
     path(
-        "orders/", views.OrdersViewSet.as_view({"get": "retrieve"}), name="orders_list"
+        "orders/",
+        views.OrdersViewSet.as_view(
+            {"get": "retrieve", "post": "create", "patch": "update"}
+        ),
+        name="orders_list",
     ),
 ]
