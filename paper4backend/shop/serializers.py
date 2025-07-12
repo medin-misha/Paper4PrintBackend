@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer, CharField
 from rest_framework.exceptions import ValidationError
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, get_list_or_404
 from .models import (
     Products,
     ProductImage,
@@ -44,11 +44,22 @@ class ProductSerializer(ModelSerializer):
 
 
 class ProductToOrderSerializer(ModelSerializer):
-    product = ProductSerializer(many=False, read_only=True)
 
     class Meta:
-        fields = ["count", "product"]
+        fields = ["count", "product", "order"]
         model = ProductToOrder
+        validators = []
+
+    def create(self, validated_data: dict) -> ProductToOrder:
+        product_id = validated_data["product"]
+        order_id = validated_data["order"]
+        count = validated_data["count"]
+        existing = ProductToOrder.objects.filter(product=product_id, order=order_id).first()
+        if existing:
+            existing.count = count
+            existing.save(update_fields=["count"])
+            return existing
+        return ProductToOrder.objects.create(**validated_data)
 
 
 class OrderSerializer(ModelSerializer):
@@ -68,7 +79,7 @@ class OrderSerializer(ModelSerializer):
 
     def validate_chat_id(self, value: str | int) -> str | int:
         if not Profile.objects.filter(chat_id=value).exists():
-            raise ValidationError("Invalid chat_id.")
+            raise ValidationError(detail="Invalid chat_id.")
         return value
 
     def get_created_orders_by_profile(self, profile: Profile) -> Orders | None:

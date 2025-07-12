@@ -12,7 +12,7 @@ urlpatterns = [
     path(
         "orders/",
         views.OrdersViewSet.as_view(
-            {"get": "retrieve", "post": "create", "patch": "update"}
+            {"get": "retrieve", "post": "create", "patch": "update", "delete": "destroy"}
         ),
         name="orders_list",
     ),
