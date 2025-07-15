@@ -44,8 +44,10 @@ INSTALLED_APPS = [
     "rest_framework",
     "storages",
     "django_filters",
+    "drf_spectacular",
     "shop.apps.ShopConfig",
     "paper4auth.apps.Paper4AuthConfig",
+    "rmq_handlers.apps.RmqHandlersConfig",
 ]
 
 MIDDLEWARE = [
@@ -158,5 +160,13 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKEND": [
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.OrderingFilter"
-    ]
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+     "EXCEPTION_HANDLER": "paper4backend.exceptions.custom_exception_handler"
 }
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Project API Docs",
+    "SERVE_INCLUDE_SCHEMA": False
+}
+
+RECEIVING_QUEUE = "queue"
