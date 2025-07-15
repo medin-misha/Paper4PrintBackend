@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer, CharField
+from rest_framework.serializers import ModelSerializer, CharField, IntegerField, UUIDField, Serializer
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, get_list_or_404
 from .models import (
@@ -97,3 +97,13 @@ class OrderSerializer(ModelSerializer):
             user=profile.user, status=OrderStatusChoices.CREATED
         )
         return order
+
+class CreateOrderRequestSerializer(Serializer):
+    chat_id = CharField(default="1234123")
+
+
+class AddProductInOrderRequestSerializer(Serializer):
+    chat_id = CharField(default="1234123")
+    count = IntegerField(default=1)
+    product_id = UUIDField()
+    
