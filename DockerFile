@@ -1,0 +1,11 @@
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm
+
+COPY pyproject.toml pyproject.toml
+COPY uv.lock uv.lock
+COPY .env .env
+COPY paper4backend/ paper4backend/
+
+RUN uv run paper4backend/manage.py migrate
+WORKDIR paper4backend
+
+# CMD ["uv", "run", "manage.py", "runserver", "0.0.0.0:8000", "-"]

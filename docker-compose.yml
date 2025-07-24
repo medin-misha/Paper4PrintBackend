@@ -1,0 +1,66 @@
+version: "3.9"
+
+x-def-logging: &default-logging
+  logging:
+    driver: "loki"
+    options:
+      loki-url: "http://localhost:3100/loki/api/v1/push"
+      loki-batch-size: "100"
+      loki-retries: 2
+      loki-max-backoff: 1000ms
+      loki-timeout: 1s
+
+services:
+  db:
+    <<: *default-logging
+    image: postgres:15
+    container_name: my_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+
+  app:
+    <<: *default-logging
+    build:
+      dockerfile: ./DockerFile
+    ports:
+      - "8000:8000"
+
+    command: uv run manage.py runserver 0.0.0.0:8000 --noreload
+    tty: true
+    stdin_open: true
+
+  loki:
+    hostname: loki
+    image: grafana/loki:latest
+    environment:
+      TZ: ${SYSTEM_TIMEZONE:-Europe/Moscow}
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki/retention-config.yaml:/etc/loki/retention-config.yaml
+
+  grafana:
+    hostname: grafana
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=123456
+      - TZ=${SYSTEM_TIMEZONE:-Europe/Moscow}
+    image: grafana/grafana:latest
+      # Добавим проброс каталога файловой системы в файловую систему контейнра
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - "3000:3000"
+volumes:
+  pgdata:
