@@ -24,7 +24,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/shop/", include("shop.urls")),
     path("api/v1/auth/", include("paper4auth.urls")),
-    path("/api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/v1/swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger"),
     path("api/v1/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ] + static(prefix=settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

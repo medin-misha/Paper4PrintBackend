@@ -31,7 +31,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 RMQ_URL = os.getenv("RABBITMQ_URL")
-
+RECEIVING_QUEUE = os.getenv("RECEIVING_QUEUE")
 # Application definition
 
 INSTALLED_APPS = [
@@ -168,5 +168,22 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Project API Docs",
     "SERVE_INCLUDE_SCHEMA": False
 }
-
-RECEIVING_QUEUE = "queue"
+# LOGFILE_NAME = BASE_DIR / "log.log"
+# LOGFILE_SIZE = 400 # In bytes
+# LOGFILE_COUNT = 3
+# LOGGING = {
+#     "version": 1,
+#     "disable_existing_loggers": False,
+#     "formatters": {
+#         "verbose": {
+#             "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+#         }
+#     },
+#     "handlers": {
+#         "console": {"class": "logging.StreamHandler", "formatter": "verbose"},
+#     },
+#     "root": {
+#         "handlers": ["console"],
+#         "level": "INFO",
+#     }
+# }
