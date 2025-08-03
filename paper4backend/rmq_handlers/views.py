@@ -1,4 +1,5 @@
 import logging
+from django.conf import settings
 from .base_rmq import BaseProducer
 from .utils import AuthenticationUtils
 
@@ -6,7 +7,7 @@ log = logging.getLogger(__name__)
 
 
 class AuthRegister(BaseProducer):
-    queue = "queue2"
+    queue = settings.REGISTRATION_SEND_QUEUE
 
     def produce(self, ch, method, properties, body: bytes):
         log.info("Start processing message ")

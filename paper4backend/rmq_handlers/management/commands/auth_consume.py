@@ -6,7 +6,7 @@ from rmq_handlers.base_rmq import BaseConsumer, BaseProducer
 from rmq_handlers.urls import urlpatterns
 
 
-class Command(BaseCommand, BaseConsumer):
+class Command(BaseCommand):
     help = "Consume messages from RabbitMQ"
 
     def callback(
@@ -22,6 +22,7 @@ class Command(BaseCommand, BaseConsumer):
         producer().produce(ch=ch, method=method, properties=properties, body=body)
 
     def handle(self, *args, **kwargs) -> None:
-        self.queue_declare()
-        self.channel.basic_consume(queue=self.queue, on_message_callback=self.callback)
-        self.consuming()
+        consumer = BaseConsumer(queue=settings.REGISTRATION_RECEIVING_QUEUE)
+        consumer.queue_declare()
+        consumer.channel.basic_consume(queue=self.queue, on_message_callback=self.callback)
+        consumer.consuming()
