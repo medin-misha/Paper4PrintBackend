@@ -17,4 +17,7 @@ CLOUDFLARE_SECRET_TOKEN = "АЯЕБУЧТОЭТОЗАТОКЕН"
 CLOUDFLARE_ACCESS_TOKEN_ID = "ЯЕБУЭТОТТОКЕН"
 CLOUDFLARE_ENDPOINT_URL = "https://эндпоинтurl.com"
 CLOUDFLARE_BUCKET_NAME = "ИМЯЕБАТЬ"
+
+# RabbitMq
+RABBITMQ_URL = "amqps://LoGin:PaSsWord@dog.lmq.cloudamqp.com/WhatISIt"
 ```
