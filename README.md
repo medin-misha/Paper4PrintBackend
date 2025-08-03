@@ -20,4 +20,5 @@ CLOUDFLARE_BUCKET_NAME = "ИМЯЕБАТЬ"
 
 # RabbitMq
 RABBITMQ_URL = "amqps://LoGin:PaSsWord@dog.lmq.cloudamqp.com/WhatISIt"
+RECEIVING_QUEUE
 ```
