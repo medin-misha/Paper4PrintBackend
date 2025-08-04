@@ -103,4 +103,4 @@ class Payment(models.Model):
         amount = 0
         for pto in self.order.products.all():
             amount += pto.amount
-        return amount
+        return float(amount)

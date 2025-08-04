@@ -11,4 +11,4 @@ def create_payment_for_orders(
     Создание Payment к Orders
     """
     if created:
-        Payment.objects.create(order=instance)
+        Payment.objects.create(order=instance, name=f"Заказ {instance.user.username}", description="Оплата вашего заказа")
