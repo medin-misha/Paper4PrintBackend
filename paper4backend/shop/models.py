@@ -95,6 +95,9 @@ class Payment(models.Model):
         max_length=3, choices=CurrencyChoices.choices, default=CurrencyChoices.USD
     )
 
+    name = models.CharField(max_length=100, default="Оплата заказа")
+    description = models.TextField(null=True, blank=True)
+
     @property
     def amount(self) -> float:
         amount = 0
