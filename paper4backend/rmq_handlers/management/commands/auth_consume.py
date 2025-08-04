@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
-import pika
 import json
 from rmq_handlers.base_rmq import BaseConsumer, BaseProducer
 from rmq_handlers.urls import urlpatterns
@@ -21,8 +20,9 @@ class Command(BaseCommand):
         producer: BaseProducer = urlpatterns.get(queue_name)
         producer().produce(ch=ch, method=method, properties=properties, body=body)
 
+
     def handle(self, *args, **kwargs) -> None:
         consumer = BaseConsumer(queue=settings.REGISTRATION_RECEIVING_QUEUE)
         consumer.queue_declare()
-        consumer.channel.basic_consume(queue=self.queue, on_message_callback=self.callback)
+        consumer.channel.basic_consume(queue=consumer.queue, on_message_callback=self.callback)
         consumer.consuming()
