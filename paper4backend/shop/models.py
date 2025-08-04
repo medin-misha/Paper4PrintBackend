@@ -31,7 +31,6 @@ class Orders(models.Model):
     def __str__(self) -> str:
         return f"Order {self.uuid} - {self.user.username} - {self.status}"
 
-
 class Products(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(null=False, blank=False)
@@ -85,3 +84,21 @@ class Tags(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name}"
+
+class PaidStatusChoices(models.TextChoices):
+    CREATED = "CREATED", "Created"
+    PAID = "PAID", "Paid"
+    FAILED = "FAILED", "Failed"
+
+class Payment(models.Model):
+    uuid = models.UUIDField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        default=PaidStatusChoices.CREATED,
+        choices=PaidStatusChoices
+    )
+    order = models.ForeignKey(to=Orders, on_delete=models.CASCADE, related_name="payment")
+
+    def amount(self) -> float:
+        for pto in self.order.products:
+            print(pto)
