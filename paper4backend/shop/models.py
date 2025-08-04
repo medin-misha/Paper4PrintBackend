@@ -3,16 +3,7 @@ from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.text import slugify
 import uuid
-
-
-class OrderStatusChoices(models.TextChoices):
-    CREATED = "CREATED", "Created"
-    PAID = "PAID", "Paid"
-    PROCESSED = "PROCESSED", "Processed"
-    SUCCESS = "SUCCESS", "Success"
-    CANCELLED = "CANCELLED", "Cancelled"
-    FAILED = "FAILED", "Failed"
-    RETURNED = "RETURNED", "Returned"
+from shop.choices import CurrencyChoices, PaidStatusChoices, OrderStatusChoices
 
 
 # Create your models here.
@@ -30,6 +21,7 @@ class Orders(models.Model):
 
     def __str__(self) -> str:
         return f"Order {self.uuid} - {self.user.username} - {self.status}"
+
 
 class Products(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -71,6 +63,10 @@ class ProductToOrder(models.Model):
     def __str__(self) -> str:
         return f"{self.product.name} * {self.count} in {self.order.user.username}"
 
+    @property
+    def amount(self) -> float:
+        return (self.product.price - self.product.sale) * self.count
+
 
 class Tags(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
@@ -85,20 +81,23 @@ class Tags(models.Model):
     def __str__(self) -> str:
         return f"{self.name}"
 
-class PaidStatusChoices(models.TextChoices):
-    CREATED = "CREATED", "Created"
-    PAID = "PAID", "Paid"
-    FAILED = "FAILED", "Failed"
 
 class Payment(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
-        default=PaidStatusChoices.CREATED,
-        choices=PaidStatusChoices
+        default=PaidStatusChoices.CREATED, choices=PaidStatusChoices
     )
-    order = models.ForeignKey(to=Orders, on_delete=models.CASCADE, related_name="payment")
+    order = models.OneToOneField(
+        to=Orders, on_delete=models.CASCADE, related_name="payment"
+    )
+    currency = models.CharField(
+        max_length=3, choices=CurrencyChoices.choices, default=CurrencyChoices.USD
+    )
 
+    @property
     def amount(self) -> float:
-        for pto in self.order.products:
-            print(pto)
+        amount = 0
+        for pto in self.order.products.all():
+            amount += pto.amount
+        return amount

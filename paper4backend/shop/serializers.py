@@ -1,4 +1,11 @@
-from rest_framework.serializers import ModelSerializer, CharField, IntegerField, UUIDField, Serializer
+from rest_framework.serializers import (
+    ModelSerializer,
+    CharField,
+    IntegerField,
+    UUIDField,
+    Serializer,
+    SerializerMethodField,
+)
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, get_list_or_404
 from .models import (
@@ -8,8 +15,20 @@ from .models import (
     Orders,
     ProductToOrder,
     OrderStatusChoices,
+    Payment,
 )
 from paper4auth.models import Profile
+
+
+class PaymentSerializer(ModelSerializer):
+    amount = SerializerMethodField()
+
+    class Meta:
+        fields = ["status", "amount", "currency"]
+        model = Payment
+
+    def get_amount(self, obj: Payment) -> float:
+        return obj.amount
 
 
 class ProductImageSerializer(ModelSerializer):
@@ -44,7 +63,6 @@ class ProductSerializer(ModelSerializer):
 
 
 class ProductToOrderSerializer(ModelSerializer):
-
     class Meta:
         fields = ["count", "product", "order"]
         model = ProductToOrder
@@ -54,7 +72,9 @@ class ProductToOrderSerializer(ModelSerializer):
         product_id = validated_data["product"]
         order_id = validated_data["order"]
         count = validated_data["count"]
-        existing = ProductToOrder.objects.filter(product=product_id, order=order_id).first()
+        existing = ProductToOrder.objects.filter(
+            product=product_id, order=order_id
+        ).first()
         if existing:
             existing.count = count
             existing.save(update_fields=["count"])
@@ -65,6 +85,7 @@ class ProductToOrderSerializer(ModelSerializer):
 class OrderSerializer(ModelSerializer):
     products = ProductToOrderSerializer(many=True, read_only=True)
     chat_id = CharField(write_only=True)
+    payment = PaymentSerializer(read_only=True, many=False)
 
     class Meta:
         fields = [
@@ -74,6 +95,7 @@ class OrderSerializer(ModelSerializer):
             "created_timestamp",
             "products",
             "chat_id",
+            "payment",
         ]
         model = Orders
 
@@ -98,6 +120,7 @@ class OrderSerializer(ModelSerializer):
         )
         return order
 
+
 class CreateOrderRequestSerializer(Serializer):
     chat_id = CharField(default="1234123")
 
@@ -106,4 +129,3 @@ class AddProductInOrderRequestSerializer(Serializer):
     chat_id = CharField(default="1234123")
     count = IntegerField(default=1)
     product_id = UUIDField()
-    

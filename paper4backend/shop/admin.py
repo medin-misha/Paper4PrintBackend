@@ -1,14 +1,20 @@
 from django.contrib import admin
-from .models import ProductImage, Orders, Products, ProductToOrder, Tags
+from .models import ProductImage, Orders, Products, ProductToOrder, Tags, Payment
 
 
 class ProductToOrderInline(admin.TabularInline):
     extra = 1
     model = ProductToOrder
 
+
 class ProductImageInline(admin.TabularInline):
     extra = 1
     model = ProductImage
+
+
+@admin.register(Payment)
+class PaymentModelAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(ProductImage)
@@ -28,14 +34,19 @@ class OrderModelAdmin(admin.ModelAdmin):
 class ProductsModelAdmin(admin.ModelAdmin):
     list_display = ["name", "price", "created_at", "updated_at"]
     readonly_fields = ["created_at", "updated_at"]
-    inlines = [ProductImageInline,]
-    filter_horizontal = ["tags",]
+    inlines = [
+        ProductImageInline,
+    ]
+    filter_horizontal = [
+        "tags",
+    ]
     search_fields = ["name", "price", "description"]
 
 
 @admin.register(ProductToOrder)
 class ProductToOrder(admin.ModelAdmin):
     search_fields = ["product", "order"]
+
 
 @admin.register(Tags)
 class TagsModelAdmin(admin.ModelAdmin):
