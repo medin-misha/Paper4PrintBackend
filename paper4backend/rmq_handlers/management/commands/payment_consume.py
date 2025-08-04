@@ -6,7 +6,7 @@ from rmq_handlers.urls import urlpatterns
 
 
 class Command(BaseCommand):
-    help = "Command for consuming auth API"
+    help = "Command for consuming payment API"
 
     def callback(
         self,
@@ -18,11 +18,13 @@ class Command(BaseCommand):
         dict_body: dict = json.loads(body)
         queue_name = dict_body.get("type")
         producer: BaseProducer = urlpatterns.get(queue_name)
-        producer().produce(ch=ch, method=method, properties=properties, body=body)
+        if not producer is None:
+            producer().produce(ch=ch, method=method, properties=properties, body=body)
 
-
-    def handle(self, *args, **kwargs) -> None:
-        consumer = BaseConsumer(queue=settings.REGISTRATION_RECEIVING_QUEUE)
+    def handle(self, *args, **options):
+        consumer = BaseConsumer(queue=settings.PAYMENT_RECEIVING_QUEUE)
         consumer.queue_declare()
-        consumer.channel.basic_consume(queue=consumer.queue, on_message_callback=self.callback)
+        consumer.channel.basic_consume(
+            queue=consumer.queue, on_message_callback=self.callback
+        )
         consumer.consuming()

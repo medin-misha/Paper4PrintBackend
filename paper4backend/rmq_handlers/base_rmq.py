@@ -43,6 +43,13 @@ class BaseConsumer(BaseRMQ):
             очереди (должен быть реализован в дочернем классе).
         consuming(): Запускает бесконечное чтение очереди; останавливается
             по KeyboardInterrupt и закрывает соединение.
+
+    Вот примерно как должно выглядить работа:
+        consumer = BaseConsumer(queue=PAYMENT_RECEIVING_QUEUE)
+        consumer.queue_declare()
+        consumer.channel.basic_consume(queue=consumer.queue, on_message_callback=CALLBACK)
+        consumer.consuming()
+
     """
     def __init__(self, queue: str):
         self.queue = queue

@@ -1,15 +1,32 @@
-from paper4auth.models import User, Profile
-from datetime import datetime
+from django.db.models import QuerySet
+from django.db import transaction
 import json
+from paper4auth.models import User, Profile
+from shop.models import Orders, Payment
+from shop.choices import OrderStatusChoices, PaidStatusChoices
 
 
-class AuthenticationUtils:
+class BaseUtils:
+    @staticmethod
+    def increment_correlation_id(correlation_id: str) -> str or dict:
+        try:
+            split_correlation_id: list = correlation_id.split(".")
+            return f"{split_correlation_id[0]}.{split_correlation_id[1]}.{int(split_correlation_id[2]) + 1}"
+        except ValueError:
+            return {"error": f"You send invalid correlation id: {correlation_id}", "reference": "auth.register.1"}
+        except IndexError:
+            return {"error": f"You send invalid correlation id: {correlation_id}", "reference": "auth.register.1"}
+    @staticmethod
+    def correlation_id_is_not_valid():
+        pass
+
+
+class AuthenticationUtils(BaseUtils):
     @staticmethod
     def registration_error(data: dict, exc: Exception) -> dict:
         return {
             "error": str(exc),
             "type": "auth.register.error",
-            "timestamp": datetime.now().isoformat(),
             "correlation_id": data.get("correlation_id", "auth.register.N"),
         }
 
@@ -71,14 +88,80 @@ class AuthenticationUtils:
                 chat_id=chat_id, user=user
             )
 
-            split_correlation_id: list = data["correlation_id"].split(".")
+            correlation_id: list = AuthenticationUtils.increment_correlation_id(
+                correlation_id=data["correlation_id"]
+            )
             return {
                 "type": "auth.register.response",
                 "data": {
                     "profile_created": profile_created,
                     "user_created": user_created,
                 },
-                "correlation_id": f"{split_correlation_id[0]}.{split_correlation_id[1]}.{int(split_correlation_id[2]) + 1}",
+                "correlation_id": correlation_id,
             }
         except Exception as exc:
             return AuthenticationUtils.registration_error(data=data, exc=exc)
+
+
+class PaymentUtils(BaseUtils):
+    @staticmethod
+    def order_not_found(chat_id: str, correlation_id: str):
+        return {
+            "type": "payment.initial.response.error",
+            "chat_id": chat_id,
+            correlation_id: PaymentUtils.increment_correlation_id(
+                correlation_id=correlation_id
+            ),
+            "data": {"error": f"Order is not found by {chat_id}."},
+        }
+
+    @staticmethod
+    def get_order_queryset(chat_id: str) -> QuerySet[Orders]:
+        return Orders.objects.filter(
+            user__profiling__chat_id=chat_id, status=OrderStatusChoices.CREATED
+        ).all()
+
+    @staticmethod
+    def initial_payment(raw_data: bytes) -> dict:
+        data: dict = json.loads(raw_data)
+        chat_id: str = data.get("chat_id")
+        correlation_id: str = data.get("correlation_id")
+        order: QuerySet[Orders] = PaymentUtils.get_order_queryset(chat_id=chat_id)
+        if len(order) <= 0:
+            return PaymentUtils.order_not_found(
+                chat_id=chat_id, correlation_id=correlation_id
+            )
+        order = order.first()
+        currency = order.payment.currency
+        amount = order.payment.amount
+        name = order.payment.name
+        description = order.payment.description
+        return {
+            "chat_id": chat_id,
+            "type": "payment.init.response",
+            "data": {
+                "currency": currency,
+                "amount": amount,
+                "name": name,
+                "description": description
+            },
+            "correlation_id": PaymentUtils.increment_correlation_id(correlation_id=correlation_id)
+        }
+
+
+    @staticmethod
+    @transaction.atomic
+    def status_payment(raw_data: bytes) -> None:
+        data: dict = json.loads(raw_data)
+        chat_id: str = data.get("chat_id")
+        correlation_id: str = data.get("correlation_id")
+        status = data["data"].get("status")
+        order: QuerySet[Orders] = PaymentUtils.get_order_queryset(chat_id=chat_id)
+        payment: Payment = order.first().payment
+        if status in PaidStatusChoices.PAID:
+            payment.status = PaidStatusChoices.PAID
+            payment.save()
+            order.first().status = OrderStatusChoices.PAID
+            order.first().save()
+            return
+
