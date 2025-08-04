@@ -91,7 +91,7 @@ class PaidStatusChoices(models.TextChoices):
     FAILED = "FAILED", "Failed"
 
 class Payment(models.Model):
-    uuid = models.UUIDField()
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
         default=PaidStatusChoices.CREATED,
