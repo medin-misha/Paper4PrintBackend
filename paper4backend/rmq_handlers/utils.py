@@ -1,25 +1,40 @@
+from getopt import error
+
 from django.db.models import QuerySet
 from django.db import transaction
 import json
+
+from pydantic import ValidationError, BaseModel
+
 from paper4auth.models import User, Profile
 from shop.models import Orders, Payment
 from shop.choices import OrderStatusChoices, PaidStatusChoices
+from rmq_handlers.validators import (
+    PaymentInitRequest,
+    PaymentInitResponse,
+    PaymentInitResponseData,
+    PaymentInitErrorResponse,
+    PaymentStatusErrorResponse,
+    PaymentStatusResponse, PaymentStatusRequest,
+)
 
 
 class BaseUtils:
     @staticmethod
-    def increment_correlation_id(correlation_id: str) -> str or dict:
+    def increment_correlation_id(correlation_id: str) -> str:
         try:
             split_correlation_id: list = correlation_id.split(".")
             return f"{split_correlation_id[0]}.{split_correlation_id[1]}.{int(split_correlation_id[2]) + 1}"
         except ValueError:
-            return {"error": f"You send invalid correlation id: {correlation_id}", "reference": "auth.register.1"}
+            return f"You send invalid correlation id: {correlation_id}"
         except IndexError:
-            return {"error": f"You send invalid correlation id: {correlation_id}", "reference": "auth.register.1"}
+            return f"You send invalid correlation id: {correlation_id}"
+        except AttributeError:
+            return "Сorrelation_id not transmitted"
+
     @staticmethod
     def correlation_id_is_not_valid():
         pass
-
 
 class AuthenticationUtils(BaseUtils):
     @staticmethod
@@ -104,6 +119,7 @@ class AuthenticationUtils(BaseUtils):
 
 
 class PaymentUtils(BaseUtils):
+
     @staticmethod
     def order_not_found(chat_id: str, correlation_id: str):
         return {
@@ -122,46 +138,93 @@ class PaymentUtils(BaseUtils):
         ).all()
 
     @staticmethod
-    def initial_payment(raw_data: bytes) -> dict:
-        data: dict = json.loads(raw_data)
-        chat_id: str = data.get("chat_id")
-        correlation_id: str = data.get("correlation_id")
-        order: QuerySet[Orders] = PaymentUtils.get_order_queryset(chat_id=chat_id)
-        if len(order) <= 0:
-            return PaymentUtils.order_not_found(
-                chat_id=chat_id, correlation_id=correlation_id
+    def initial_payment(
+        raw_data: bytes,
+    ) -> PaymentInitResponse or PaymentInitErrorResponse:
+        try:
+            data = PaymentInitRequest(**json.loads(raw_data))
+        except ValidationError as error:
+            return PaymentInitErrorResponse(
+                chat_id="None",
+                correlation_id="None",
+                data={"error": f"{error}"},
             )
-        order = order.first()
-        currency = order.payment.currency
-        amount = order.payment.amount
-        name = order.payment.name
-        description = order.payment.description
-        return {
-            "chat_id": chat_id,
-            "type": "payment.init.response",
-            "data": {
-                "currency": currency,
-                "amount": amount,
-                "name": name,
-                "description": description
-            },
-            "correlation_id": PaymentUtils.increment_correlation_id(correlation_id=correlation_id)
-        }
+        chat_id: str = data.chat_id
+        correlation_id: str = data.correlation_id
+        try:
+            order: QuerySet[Orders] = PaymentUtils.get_order_queryset(chat_id=chat_id).first()
+            currency = order.payment.currency
+            amount = order.payment.amount
+            name = order.payment.name
+            description = order.payment.description
+        except AttributeError:
+            return PaymentInitErrorResponse(
+                type="payment.init.response.error",
+                chat_id=chat_id,
+                correlation_id=PaymentUtils.increment_correlation_id(
+                    correlation_id=correlation_id
+                ),
+                data={"error": f"Order is not found by {chat_id}."},
+            )
 
 
+        return PaymentInitResponse(
+            chat_id=chat_id,
+            data=PaymentInitResponseData(
+                currency=currency,
+                amount=amount,
+                name=name or "",
+                description=description or "",
+            ),
+            correlation_id=PaymentUtils.increment_correlation_id(
+                correlation_id=correlation_id
+            ),
+        )
     @staticmethod
     @transaction.atomic
-    def status_payment(raw_data: bytes) -> None:
-        data: dict = json.loads(raw_data)
-        chat_id: str = data.get("chat_id")
-        correlation_id: str = data.get("correlation_id")
-        status = data["data"].get("status")
+    def set_paid_status(status: str, chat_id: str) -> None:
         order: QuerySet[Orders] = PaymentUtils.get_order_queryset(chat_id=chat_id)
         payment: Payment = order.first().payment
-        if status in PaidStatusChoices.PAID:
+        if status == PaidStatusChoices.PAID:
             payment.status = PaidStatusChoices.PAID
             payment.save()
             order.first().status = OrderStatusChoices.PAID
             order.first().save()
-            return
 
+    @staticmethod
+    def status_payment(raw_data: bytes) -> PaymentStatusResponse | PaymentStatusErrorResponse:
+        try:
+            data = PaymentStatusRequest(**json.loads(raw_data))
+        except ValidationError as error:
+            return PaymentStatusErrorResponse(
+                chat_id="None",
+                correlation_id="None",
+                data={"error": f"{error}"},
+            )
+        chat_id: str = data.chat_id
+        correlation_id: str = data.correlation_id
+        status = data.data.status
+        try:
+            PaymentUtils.set_paid_status(chat_id=chat_id, status=status)
+            return PaymentStatusResponse(
+                chat_id=chat_id,
+                correlation_id=PaymentUtils.increment_correlation_id(
+                    correlation_id=correlation_id
+                )
+            )
+        except AttributeError:
+            return PaymentStatusErrorResponse(
+                chat_id=chat_id,
+                correlation_id=PaymentUtils.increment_correlation_id(
+                    correlation_id=correlation_id
+                ),
+                data={"error": f"Order is not found by {chat_id}."},
+            )
+
+        return PaymentStatusErrorResponse(
+            chat_id=chat_id,
+            correlation_id=PaymentUtils.increment_correlation_id(
+                correlation_id=correlation_id
+            ),
+            data={"error": f"Status is invalid"},
+        )

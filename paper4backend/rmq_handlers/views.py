@@ -10,8 +10,9 @@ class AuthRegister(BaseProducer):
     queue = settings.REGISTRATION_SEND_QUEUE
 
     def produce(self, ch, method, properties, body: bytes):
-        authentication_result: dict = AuthenticationUtils.create_user(raw_data=body)
-        self.basic_publish(body=authentication_result)
+        response: dict = AuthenticationUtils.create_user(raw_data=body)
+        print(response)
+        self.basic_publish(body=response)
         self.ack(ch=ch, method=method)
 
 class PaymentInitial(BaseProducer):
@@ -20,13 +21,14 @@ class PaymentInitial(BaseProducer):
     def produce(self, ch, method, properties, body: bytes):
         response = PaymentUtils.initial_payment(raw_data=body)
         print(response)
-        self.basic_publish(body=response)
+        self.basic_publish(body=response.model_dump())
         self.ack(ch=ch, method=method)
 
 class PaymentStatus(BaseProducer):
     queue = settings.PAYMENT_SEND_QUEUE
 
     def produce(self, ch, method, properties, body: bytes):
-        PaymentUtils.status_payment(raw_data=body)
-        print("OK")
+        response = PaymentUtils.status_payment(raw_data=body)
+        print(response)
+        self.basic_publish(body=response.model_dump())
         self.ack(ch=ch, method=method)
