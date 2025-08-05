@@ -15,7 +15,13 @@ from rmq_handlers.validators import (
     PaymentInitResponseData,
     PaymentInitErrorResponse,
     PaymentStatusErrorResponse,
-    PaymentStatusResponse, PaymentStatusRequest,
+    PaymentStatusResponse,
+    PaymentStatusRequest,
+    AuthRegistrationResponse,
+    AuthRegistrationRequest,
+    AuthRegistrationErrorResponse,
+    AuthRegistrationDataRequest,
+    AuthRegistrationDataResponse,
 )
 
 
@@ -36,17 +42,12 @@ class BaseUtils:
     def correlation_id_is_not_valid():
         pass
 
+
 class AuthenticationUtils(BaseUtils):
     @staticmethod
-    def registration_error(data: dict, exc: Exception) -> dict:
-        return {
-            "error": str(exc),
-            "type": "auth.register.error",
-            "correlation_id": data.get("correlation_id", "auth.register.N"),
-        }
-
-    @staticmethod
-    def create_user(raw_data: bytes) -> dict:
+    def create_user(
+        raw_data: bytes,
+    ) -> AuthRegistrationErrorResponse | AuthRegistrationResponse:
         """
         Обрабатывает сообщение регистрации пользователя, полученное через RabbitMQ.
 
@@ -92,34 +93,40 @@ class AuthenticationUtils(BaseUtils):
             Внутри функции все исключения перехватываются и логируются через возврат ошибки.
         """
         try:
-            data: dict = json.loads(raw_data)
-            msg_data: dict = data.get("data", {})
-            username: str = msg_data.get("username")
-            chat_id: str = data.get("chat_id")
-            if not username or not chat_id:
-                raise ValueError("username and chat_id are required")
+            data = AuthRegistrationRequest(**json.loads(raw_data))
+        except ValidationError as error:
+            return AuthRegistrationErrorResponse(
+                chat_id="None", correlation_id="None", error=f"{error}"
+            )
+        try:
+            username: str = data.data.username
+            chat_id: str = data.chat_id
+
             user, user_created = User.objects.get_or_create(username=username)
             profile, profile_created = Profile.objects.get_or_create(
                 chat_id=chat_id, user=user
             )
-
-            correlation_id: list = AuthenticationUtils.increment_correlation_id(
-                correlation_id=data["correlation_id"]
+            return AuthRegistrationResponse(
+                chat_id=data.chat_id,
+                data=AuthRegistrationDataResponse(
+                    profile_created=profile_created, user_created=user_created
+                ),
+                correlation_id=AuthenticationUtils.increment_correlation_id(
+                    correlation_id=data.correlation_id,
+                ),
             )
-            return {
-                "type": "auth.register.response",
-                "data": {
-                    "profile_created": profile_created,
-                    "user_created": user_created,
-                },
-                "correlation_id": correlation_id,
-            }
-        except Exception as exc:
-            return AuthenticationUtils.registration_error(data=data, exc=exc)
+
+        except Exception as error:
+            return AuthRegistrationErrorResponse(
+                chat_id=data.chat_id,
+                correlation_id=AuthenticationUtils.increment_correlation_id(
+                    correlation_id=data.correlation_id,
+                ),
+                error=f"{error}",
+            )
 
 
 class PaymentUtils(BaseUtils):
-
     @staticmethod
     def order_not_found(chat_id: str, correlation_id: str):
         return {
@@ -152,7 +159,9 @@ class PaymentUtils(BaseUtils):
         chat_id: str = data.chat_id
         correlation_id: str = data.correlation_id
         try:
-            order: QuerySet[Orders] = PaymentUtils.get_order_queryset(chat_id=chat_id).first()
+            order: QuerySet[Orders] = PaymentUtils.get_order_queryset(
+                chat_id=chat_id
+            ).first()
             currency = order.payment.currency
             amount = order.payment.amount
             name = order.payment.name
@@ -167,7 +176,6 @@ class PaymentUtils(BaseUtils):
                 data={"error": f"Order is not found by {chat_id}."},
             )
 
-
         return PaymentInitResponse(
             chat_id=chat_id,
             data=PaymentInitResponseData(
@@ -180,6 +188,7 @@ class PaymentUtils(BaseUtils):
                 correlation_id=correlation_id
             ),
         )
+
     @staticmethod
     @transaction.atomic
     def set_paid_status(status: str, chat_id: str) -> None:
@@ -192,7 +201,9 @@ class PaymentUtils(BaseUtils):
             order.first().save()
 
     @staticmethod
-    def status_payment(raw_data: bytes) -> PaymentStatusResponse | PaymentStatusErrorResponse:
+    def status_payment(
+        raw_data: bytes,
+    ) -> PaymentStatusResponse | PaymentStatusErrorResponse:
         try:
             data = PaymentStatusRequest(**json.loads(raw_data))
         except ValidationError as error:
@@ -210,7 +221,7 @@ class PaymentUtils(BaseUtils):
                 chat_id=chat_id,
                 correlation_id=PaymentUtils.increment_correlation_id(
                     correlation_id=correlation_id
-                )
+                ),
             )
         except AttributeError:
             return PaymentStatusErrorResponse(

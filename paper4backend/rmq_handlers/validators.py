@@ -24,6 +24,29 @@ class PaymentStatusRequest(BaseMessage):
     data: PaymentStatusData
 
 
+class AuthRegistrationDataRequest(BaseModel):
+    username: str
+
+
+class AuthRegistrationDataResponse(BaseModel):
+    profile_created: bool
+    user_created: bool
+
+
+class AuthRegistrationRequest(BaseMessage):
+    data: AuthRegistrationDataRequest
+
+
+class AuthRegistrationErrorResponse(BaseMessage):
+    type: Literal["auth.register.response"] = "auth.register.response"
+    error: str
+
+
+class AuthRegistrationResponse(BaseMessage):
+    data: AuthRegistrationDataResponse
+    type: Literal["auth.register.response"] = "auth.register.response"
+
+
 # --- Ответы от Django ---
 class PaymentInitResponseData(BaseModel):
     currency: str
@@ -35,6 +58,7 @@ class PaymentInitResponseData(BaseModel):
 class PaymentInitResponse(BaseMessage):
     type: Literal["payment.init.response"] = "payment.init.response"
     data: PaymentInitResponseData
+
 
 class PaymentStatusResponse(BaseMessage):
     type: Literal["payment.status.response"] = "payment.status.response"

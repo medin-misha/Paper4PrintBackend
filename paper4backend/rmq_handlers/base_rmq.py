@@ -2,6 +2,7 @@ from django.conf import settings
 import pika
 import json
 
+
 class BaseRMQ:
     """
     Базовый класс для взаимодействия с RabbitMQ.
@@ -18,6 +19,7 @@ class BaseRMQ:
         queue_declare(): Объявляет очередь, имя которой должно быть задано
                          в дочернем классе в атрибуте `queue`.
     """
+
     connection = pika.BlockingConnection(pika.URLParameters(settings.RMQ_URL))
     channel = connection.channel()
 
@@ -51,6 +53,7 @@ class BaseConsumer(BaseRMQ):
         consumer.consuming()
 
     """
+
     def __init__(self, queue: str):
         self.queue = queue
 
@@ -84,12 +87,15 @@ class BaseProducer(BaseRMQ):
         produce(...): Заготовка под сложную логику отправки (переопределяется при необходимости).
         ack(ch, method, ...): Подтверждает доставку сообщения.
     """
+
     queue = ""
 
     def basic_publish(self, body: dict, exchange: str = ""):
         self.queue_declare()
         print(body)
-        self.channel.basic_publish(routing_key=self.queue, exchange=exchange, body=json.dumps(body))
+        self.channel.basic_publish(
+            routing_key=self.queue, exchange=exchange, body=json.dumps(body)
+        )
 
     def close(self):
         self.channel.close()

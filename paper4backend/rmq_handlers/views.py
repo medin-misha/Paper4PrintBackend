@@ -11,9 +11,10 @@ class AuthRegister(BaseProducer):
 
     def produce(self, ch, method, properties, body: bytes):
         response: dict = AuthenticationUtils.create_user(raw_data=body)
-        print(response)
-        self.basic_publish(body=response)
+        print(response, 1)
+        self.basic_publish(body=response.model_dump())
         self.ack(ch=ch, method=method)
+
 
 class PaymentInitial(BaseProducer):
     queue = settings.PAYMENT_SEND_QUEUE
@@ -23,6 +24,7 @@ class PaymentInitial(BaseProducer):
         print(response)
         self.basic_publish(body=response.model_dump())
         self.ack(ch=ch, method=method)
+
 
 class PaymentStatus(BaseProducer):
     queue = settings.PAYMENT_SEND_QUEUE
